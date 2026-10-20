@@ -1,0 +1,55 @@
+name: Refresh orbit data and deploy
+
+on:
+  schedule:
+    - cron: '0 11 * * *'   # daily, 7 AM Eastern / 4 AM Pacific
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  actions: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  LAST_DAY: '2026-10-29'   # daily refresh runs Oct 20–29, then switches itself off
+
+jobs:
+  refresh-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stop the daily schedule after the last day
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$(date -u +%F)" \> "$LAST_DAY" ]; then
+            gh workflow disable refresh-tle.yml --repo "$GITHUB_REPOSITORY"
+            echo "STOP=1" >> "$GITHUB_ENV"
+          fi
+
+      - name: Refresh TLE
+        if: github.event_name != 'push' && env.STOP != '1'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          ./update-tle.sh
+
+      - uses: actions/upload-pages-artifact@v3
+        if: env.STOP != '1'
+        with:
+          path: .
+      - id: deploy
+        if: env.STOP != '1'
+        uses: actions/deploy-pages@v4
