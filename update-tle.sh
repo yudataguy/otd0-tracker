@@ -11,3 +11,9 @@ sed -i.bak -e "s|^  l1:'.*',\$|  l1:'$L1',|" -e "s|^  l2:'.*',\$|  l2:'$L2',|" i
 # bump the offline cache so installed home-screen copies pick up the new file
 sed -i.bak "s/sd1-tracker-v[0-9]*/sd1-tracker-v$(date +%s)/" sw.js && rm sw.js.bak
 echo "Updated SD-1 TLE:"; printf '%s\n%s\n' "$L1" "$L2"
+
+# publish to GitHub Pages if this folder is the git repo
+if [ -d .git ]; then
+  git add index.html sw.js
+  git commit -q -m "Update TLE $(date -u +%Y-%m-%d)" && git push -q && echo "Pushed — live site updates in about a minute."
+fi
