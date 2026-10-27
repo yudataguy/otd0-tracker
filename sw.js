@@ -1,5 +1,5 @@
 // Offline cache: network-first (so updates show up), falls back to cache when offline.
-const CACHE = 'sd1-tracker-v1793034171';
+const CACHE = 'sd1-tracker-v1793117134';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)));
